@@ -10,6 +10,7 @@
 #include <map>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include "common.h"
 class Data{
 
@@ -33,6 +34,9 @@ class DatasetMgr{
     std::vector<std::string> *GetTestFlagVector() const;
     std::vector<std::string> *GetTestFeatureVector() const;
     std::set<std::string> *GetTagSet() const;
+    std::vector<std::string> *GetTrainingXVector() const;
+    std::set<std::string> *GetTrainingXSet() const;
+    size_t GetNumOfTrainingSeqs() const;
 
 
 private:
@@ -48,10 +52,17 @@ private:
     std::vector<std::string> *ptr_x_tag_vector_;
     std::map<std::string, size_t> *ptr_x_tag_count_map_;
     std::map<std::string, double > *ptr_state_to_x_prob_map_;
+    std::vector<std::string> *ptr_x_vector_;
+    std::set<std::string> *ptr_x_set_;
+
+    size_t  num_of_training_setence_;
+
 
     //test dataset
     std::vector<std::string> *ptr_test_x_vector_;
     std::vector<std::string> *ptr_test_tag_vector_;
+
+
 };
 
 #endif //CLIONTEST_DATASETINFO_H

@@ -4,7 +4,7 @@
 #include "datasetmgr.h"
 #include <cctype>
 
-DatasetMgr::DatasetMgr() {
+DatasetMgr::DatasetMgr(){
     ptr_line_ = new char[LINE_MAX_SIZE]();
     ptr_tag_set_ = new std::set<std::string>();
     ptr_tag_vector_ = new std::vector<std::string>();
@@ -17,6 +17,11 @@ DatasetMgr::DatasetMgr() {
     ptr_state_to_x_prob_map_ = new std::map<std::string, double >();
     ptr_test_x_vector_  = new std::vector<std::string>();
     ptr_test_tag_vector_ = new std::vector<std::string>();
+
+    ptr_x_vector_ = new std::vector<std::string>();
+
+    ptr_x_set_ = new std::set<std::string>();
+    num_of_training_setence_ = 0;
 }
 
 DatasetMgr::~DatasetMgr() {
@@ -32,6 +37,8 @@ DatasetMgr::~DatasetMgr() {
     delete ptr_state_to_x_prob_map_;
     delete ptr_test_x_vector_;
     delete ptr_test_tag_vector_;
+    delete ptr_x_vector_;
+    delete ptr_x_set_;
 }
 
 /**
@@ -59,8 +66,9 @@ bool DatasetMgr::OpenDataSet(const char *file_name, bool istraining) {
         }
     }
     for(std::vector<std::string>::iterator it = ptr_test_x_vector_->begin();it!=ptr_test_x_vector_->end();++it){
-            std::cout << "the tag in test set is: "<<*it<<std::endl;
+            //std::cout << "the tag in test set is: "<<*it<<std::endl;
     }
+    return true;
 }
 
 void DatasetMgr::OpenTrainSet(std::vector<std::string> *ptr_vector) {
@@ -72,6 +80,16 @@ void DatasetMgr::OpenTrainSet(std::vector<std::string> *ptr_vector) {
     if(*it_parse == TAGER_BIO_O){
         ptr_tag_vector_->push_back(OUT_FLAG);
     }
+    //transfer the training x into a vector, each sentence is separated by SEPARATOR.
+    if(*it_parse == TAGER_BIO_B || *it_parse == TAGER_BIO_O){
+        ptr_x_vector_->push_back(SPERATOR_FLAG);
+        num_of_training_setence_++;
+    }
+    ptr_x_vector_->push_back(*it_x);
+
+    //features without duplicate.
+    ptr_x_set_->insert(*it_x);
+
     ptr_tag_vector_->push_back(*it_tag);
     std::string x = *it_tag;
     MergeTwoString(&x,*it_x,SPERATOR_FLAG);
@@ -229,6 +247,18 @@ std::vector<std::string> *DatasetMgr::GetTestFlagVector() const {
 
 std::set<std::string> *DatasetMgr::GetTagSet() const {
     return ptr_tag_set_;
+}
+
+std::vector<std::string> *DatasetMgr::GetTrainingXVector() const {
+    return ptr_x_vector_;
+}
+
+std::set<std::string> *DatasetMgr::GetTrainingXSet() const {
+    return ptr_x_set_;
+}
+
+size_t DatasetMgr::GetNumOfTrainingSeqs() const {
+    return num_of_training_setence_;
 }
 
 

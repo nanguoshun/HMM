@@ -10,8 +10,8 @@
 class Encoder{
 public:
     explicit Encoder(const char* training_file);
-    int StartTraining();
-    DatasetMgr * GetPtrDatamgr_() const;
+    void StartTraining();
+    DatasetMgr * GetPtrDatamgr() const;
 private:
     const std::string train_file_;
     DatasetMgr *ptr_datamgr_;

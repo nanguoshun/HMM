@@ -30,13 +30,11 @@ void Decoder::Decoding() {
         } else{
             continue;
         }
-
         if (*it != SPERATOR_FLAG) {
             setence.push_back(*it);
         } else{
             continue;
         }
-
         if (*next_it == SPERATOR_FLAG) {
             if (1 == setence.size()) {
                 std::string state = SearchStateOfMaxProb(*it);

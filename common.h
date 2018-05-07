@@ -18,4 +18,6 @@ const std::string TAGER_BIO_O = "O";
 const std::string NOT_FOUND_FLAG = "NOT_FOUND_FLAG";
 const std::string NOT_FOUND = "NOT_FOUND";
 const std::string PATH_START = "PATH_START";
+const double EM_ITERATION_STOP = 0.01;
+const double INITIAL_LOG_LIKEIHOOD = 10000;
 #endif //CLIONTEST_COMMON_H
