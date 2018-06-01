@@ -5,7 +5,7 @@
 #include "encoder.h"
 
 Encoder::Encoder(const char *training_file):train_file_(training_file) {
-    ptr_datamgr_ = new DatasetMgr();
+    ptr_datamgr_ = new DatasetMgr(true);
     ptr_datamgr_->OpenDataSet(training_file, true);
 }
 

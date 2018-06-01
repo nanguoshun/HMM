@@ -18,10 +18,11 @@ class Data{
 class DatasetMgr{
 
     public:
-    explicit DatasetMgr();
+    explicit DatasetMgr(bool is_sentence_level);
     ~DatasetMgr();
     bool OpenDataSet(const char *file_name, bool is_training);
-    void OpenTrainSet(std::vector<std::string> *ptr_vector);
+
+    void OpenTrainSet(std::vector<std::string> *ptr_vector, bool is_sentence_level);
     void OpenTestSet(std::vector<std::string> *ptr_vector);
     bool Tokenized(char* ptr_line, const char* ptr_space, std::vector<std::string> *ptr_string_line, size_t tag_maxsize, bool istraining);
     void GenerateStateTransitionVector();
@@ -56,8 +57,8 @@ private:
     std::set<std::string> *ptr_x_set_;
 
     size_t  num_of_training_setence_;
-
-
+    //chunk level POS or sentence level POS.
+    bool is_sentence_level_;
     //test dataset
     std::vector<std::string> *ptr_test_x_vector_;
     std::vector<std::string> *ptr_test_tag_vector_;

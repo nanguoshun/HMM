@@ -12,32 +12,24 @@ Learning::Learning(const char *file_name, DatasetMgr *ptr_datamgr) {
     //training x number
     ptr_x_set_ = ptr_datamgr->GetTrainingXSet();
     number_of_x_ = ptr_datamgr->GetTrainingXSet()->size();
-
     ptr_train_x_vector_ = ptr_datamgr->GetTrainingXVector();
     num_of_training_setence_ = ptr_datamgr->GetNumOfTrainingSeqs();
-
     ptr_training_seq_ = new std::vector<std::vector<std::string>>();
-
     GenerateSeqFromVector(ptr_train_x_vector_, ptr_training_seq_);
-
     //pi
     ptr_pi_ = new std::vector<double>(number_of_state_);
     //transition maxtrix
     ptr_a_ = new std::vector<std::vector<double>>(number_of_state_, std::vector<double>(number_of_state_, 1));
     //emission matrix
     ptr_b_ = new std::vector<std::vector<double>>(number_of_state_, std::vector<double>(number_of_x_, 1));
-
     //pi
     ptr_next_pi_ = new std::vector<double>(number_of_state_);
     //transition maxtrix
     ptr_next_a_ = new std::vector<std::vector<double>>(number_of_state_, std::vector<double>(number_of_state_, 1));
     //emission matrix
     ptr_next_b_ = new std::vector<std::vector<double>>(number_of_state_, std::vector<double>(number_of_x_, 1));
-
-
     pptr_alpha_ = new std::vector<std::vector<double>> *[num_of_training_setence_];
     pptr_beta_ = new std::vector<std::vector<double>> *[num_of_training_setence_];
-
     int seq_no = 0;
     for (std::vector<std::vector<std::string>>::iterator it = ptr_training_seq_->begin();
          it != ptr_training_seq_->end(); it++) {
@@ -51,13 +43,10 @@ Learning::Learning(const char *file_name, DatasetMgr *ptr_datamgr) {
         pptr_beta_[seq_no] = new std::vector<std::vector<double>>(size, std::vector<double>(number_of_state_, 1));
         seq_no++;
     }
-
     ptr_PO_ = new std::vector<double>;
     ptr_x_corpus_ = new std::vector<std::string>;
-
     pre_loglikelihood_ = INITIAL_LOG_LIKEIHOOD;
     current_loglikelihood_ = 0;
-
 }
 
 Learning::~Learning() {
@@ -67,7 +56,6 @@ Learning::~Learning() {
     delete ptr_next_a_;
     delete ptr_next_pi_;
     delete ptr_next_b_;
-
     int seq_no = 0;
     for (std::vector<std::vector<std::string>>::iterator it = ptr_training_seq_->begin();
          it != ptr_training_seq_->end(); it++) {
@@ -77,7 +65,6 @@ Learning::~Learning() {
     }
     delete pptr_alpha_;
     delete pptr_beta_;
-
     delete ptr_training_seq_;
     delete ptr_PO_;
     delete ptr_x_corpus_;

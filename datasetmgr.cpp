@@ -4,7 +4,8 @@
 #include "datasetmgr.h"
 #include <cctype>
 
-DatasetMgr::DatasetMgr(){
+DatasetMgr::DatasetMgr(bool is_sentence_level){
+    is_sentence_level_ = is_sentence_level;
     ptr_line_ = new char[LINE_MAX_SIZE]();
     ptr_tag_set_ = new std::set<std::string>();
     ptr_tag_vector_ = new std::vector<std::string>();
@@ -47,19 +48,29 @@ DatasetMgr::~DatasetMgr() {
  * @param file_name
  * @return
  */
-bool DatasetMgr::OpenDataSet(const char *file_name, bool istraining) {
+bool DatasetMgr:: OpenDataSet(const char *file_name, bool istraining) {
     std::ifstream ifs(file_name);
     std::vector<std::string> line_vector;
     size_t i = 0;
     while(ifs.getline(ptr_line_, LINE_MAX_SIZE)){
-        if('\0' == ptr_line_[0] || ' ' == ptr_line_[0] || '\t'==ptr_line_[0]){
+        if('\0' == ptr_line_[0] || '\t'==ptr_line_[0]||' ' == ptr_line_[0]){
             continue;
+        }
+        if('.' == ptr_line_[0]){
+            if(is_sentence_level_){
+                ptr_x_vector_->push_back(SPERATOR_FLAG);
+                ptr_tag_vector_->push_back(SPERATOR_FLAG);
+                num_of_training_setence_++;
+                continue;
+            }else{
+                continue;
+            }
         }
         i++;
         line_vector.clear();
         if(true == Tokenized(ptr_line_,"\t ",&line_vector,TAG_MAX_SIZE,istraining)){
             if(true == istraining){
-                OpenTrainSet(&line_vector);
+                OpenTrainSet(&line_vector,is_sentence_level_);
             }else{
                 OpenTestSet(&line_vector);
             }
@@ -71,29 +82,36 @@ bool DatasetMgr::OpenDataSet(const char *file_name, bool istraining) {
     return true;
 }
 
-void DatasetMgr::OpenTrainSet(std::vector<std::string> *ptr_vector) {
+void DatasetMgr::OpenTrainSet(std::vector<std::string> *ptr_vector, bool is_sentence_level) {
     std::vector<std::string>::iterator it_x = ptr_vector->begin();
     std::vector<std::string>::iterator it_tag = ptr_vector->end()-2;
     std::vector<std::string>::iterator it_parse = ptr_vector->end()-1;
-    ptr_tag_set_->insert(*it_tag);
-    //BOI tag, the "O" is indicated as OUT_FLAG, it indicates that no state transition for a "0" sentence.
-    if(*it_parse == TAGER_BIO_O){
-        ptr_tag_vector_->push_back(OUT_FLAG);
+    if(is_sentence_level){
+     //   std::cout << *it_x << std::endl;
+     //   std::cout << *it_tag << std::endl;
+        ptr_x_vector_->push_back(*it_x);
+        ptr_tag_vector_->push_back(*it_tag);
+        ptr_tag_set_->insert(*it_tag);
+        ptr_x_set_->insert(*it_x);
+    }else{
+        ptr_tag_set_->insert(*it_tag);
+        //BOI tag, the "O" is indicated as OUT_FLAG, it indicates that no state transition for a "0" sentence.
+        if(*it_parse == TAGER_BIO_O){
+            ptr_tag_vector_->push_back(OUT_FLAG);
+        }
+        //transfer the training x into a vector, each sentence is separated by SEPARATOR.
+        if(*it_parse == TAGER_BIO_B || *it_parse == TAGER_BIO_O){
+            ptr_x_vector_->push_back(SPERATOR_FLAG);
+            num_of_training_setence_++;
+        }
+        ptr_x_vector_->push_back(*it_x);
+        //features without duplicate.
+        ptr_x_set_->insert(*it_x);
+        ptr_tag_vector_->push_back(*it_tag);
+        std::string x = *it_tag;
+        MergeTwoString(&x,*it_x,SPERATOR_FLAG);
+        ptr_x_tag_vector_->push_back(x);
     }
-    //transfer the training x into a vector, each sentence is separated by SEPARATOR.
-    if(*it_parse == TAGER_BIO_B || *it_parse == TAGER_BIO_O){
-        ptr_x_vector_->push_back(SPERATOR_FLAG);
-        num_of_training_setence_++;
-    }
-    ptr_x_vector_->push_back(*it_x);
-
-    //features without duplicate.
-    ptr_x_set_->insert(*it_x);
-
-    ptr_tag_vector_->push_back(*it_tag);
-    std::string x = *it_tag;
-    MergeTwoString(&x,*it_x,SPERATOR_FLAG);
-    ptr_x_tag_vector_->push_back(x);
 }
 
 void DatasetMgr::OpenTestSet(std::vector<std::string> *ptr_vector) {
@@ -135,7 +153,7 @@ bool DatasetMgr::Tokenized(char *ptr_line, const char *ptr_space, std::vector<st
         char *space = std::find_first_of(ptr_line,endofline,ptr_space,endofspace); //search the space in the line.
         *space = '\0';
         if(*ptr_line!='\0'){
-            if (!ispunct(*ptr_line)){ // omit if it is a punctuation, such as ;, ?
+            //if (!ispunct(*ptr_line)){ // omit if it is a punctuation, such as ;, ?
                 if(istraining){
                     if(!isdigit(*ptr_line)){
                         ptr_string_line->push_back(ptr_line);
@@ -145,9 +163,9 @@ bool DatasetMgr::Tokenized(char *ptr_line, const char *ptr_space, std::vector<st
                 }else{
                     ptr_string_line->push_back(ptr_line);
                 }
-            }else{
-                return false;
-            }
+           // }else{
+           //     return false;
+           // }
             ++size;
         }
         if(space == endofline){
@@ -180,7 +198,6 @@ void DatasetMgr::GenerateCountMap(std::vector<std::string> *ptr_vector, std::map
             }
         }
     }
-
 }
 
 /**
