@@ -12,15 +12,18 @@
 
 class EM{
 public:
-    EM(const char* file_name, DatasetMgr *ptr_datamgr);
+    EM(DatasetMgr *ptr_datamgr);
     ~EM();
-    void EStep();
+    void SoftEStep();
+    void HardEStep();
     void MStep();
+    int Viterbi(std::vector<std::string> seq);
+    void BackTracking(std::vector<std::string> seq, int finalnode);
     void Normalize();
     void CalcUV(std::vector<std::string> seq, double Z_i);
     void CalcUO(std::vector<std::string> seq,double Z_i);
     double CalcU(std::vector<std::string> seq,int u, double Z_i);
-    void Learning();
+    void Learning(bool is_soft_EM);
     bool IsIteration();
     double CalcPX(std::vector<std::string> seq);
     void GenerateSeqFromVector(std::vector<std::string> *ptr_vector, std::vector<std::vector<std::string>> *ptr_seq_vector);
@@ -33,6 +36,7 @@ private:
     std::set<std::string> *ptr_x_set_;
     std::vector<std::string> *ptr_train_x_vector_; //sequence is separated by a FLAG;
     std::vector<std::vector<std::string>> *ptr_training_seq_;
+    std::vector<std::vector<double >> *ptr_path_node_;
 
     FB *ptr_fwbw;
     size_t  number_of_x_;

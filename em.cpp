@@ -3,31 +3,29 @@
 //
 
 #include "em.h"
-
-EM::EM(const char *file_name, DatasetMgr *ptr_datamgr) {
+EM::EM(DatasetMgr *ptr_datamgr) {
     ptr_datamgr_ = ptr_datamgr;
     ptr_x_set_ = ptr_datamgr->GetTrainingXSet();
     number_of_x_ = ptr_datamgr->GetTrainingXSet()->size();
     ptr_train_x_vector_ = ptr_datamgr->GetTrainingXVector();
-//    HMM_Parameters_.num_of_state_ = 4;//ptr_datamgr_->GetTagSet()->size() + 2;
- //   HMM_Parameters_.num_of_x_ = 3;//number_of_x_;
     HMM_Parameters_.num_of_state_ = ptr_datamgr_->GetTagSet()->size() + 2;
     HMM_Parameters_.num_of_x_ = number_of_x_;
+#ifdef TEST_MODE
+    HMM_Parameters_.num_of_state_ = 4;//ptr_datamgr_->GetTagSet()->size() + 2;
+    HMM_Parameters_.num_of_x_ = 3;//number_of_x_;
+#endif
     num_of_training_setence_ = ptr_datamgr->GetNumOfTrainingSeqs();
     ptr_training_seq_ = new std::vector<std::vector<std::string>>();
     GenerateSeqFromVector(ptr_train_x_vector_, ptr_training_seq_);
     //transition maxtrix
-    int num_of_cloumn = HMM_Parameters_.num_of_state_ - 1;
     HMM_Parameters_.ptr_t_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 1, std::vector<double>(HMM_Parameters_.num_of_state_ - 1, 1));
     //emission matrix
     HMM_Parameters_.ptr_e_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 2, std::vector<double>(number_of_x_, 1));
-    //transition maxtrix
-    //HMM_Parameters_.ptr_t_next_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 1, std::vector<double>(HMM_Parameters_.num_of_state_ - 1, 1));
-    //emission matrix
-    //HMM_Parameters_.ptr_e_next_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 1, std::vector<double>(number_of_x_, 1));
     HMM_Parameters_.ptr_count_uv_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 1, std::vector<double>(HMM_Parameters_.num_of_state_ - 1, 1));
     HMM_Parameters_.ptr_count_u_ = new std::vector<double>;
     HMM_Parameters_.ptr_count_uk_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 2, std::vector<double>(number_of_x_, 1));
+    //to record the previous node with maximized prob.
+    ptr_path_node_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 2, std::vector<double>(number_of_x_, 1));
     ptr_fwbw = new FB();
     ptr_x_corpus_map_ = new std::map<std::string, int>;
     ptr_x_corpus_ = new std::vector<std::string>;
@@ -51,23 +49,29 @@ void EM::RandomInitProb(double *ptr_prob_array, int array_size) {
 }
 
 void EM::Init() {
-    //double t[3][3] = {{0.3,0.7,0},{0.4,0.5,0.1},{0.6,0.2,0.2}};
-    //double e[2][3] = {{0.3,0.4,0.3},{0.4,0.2,0.4}};
+#ifdef TEST_MODE
+    double t[3][3] = {{0.3, 0.7, 0}, {0.4, 0.5, 0.1}, {0.6, 0.2, 0.2}};
+    double e[2][3] = {{0.3, 0.4, 0.3}, {0.4, 0.2, 0.4}};
+#endif
     for (int u = 0; u <= HMM_Parameters_.num_of_state_ - 2; u++) {
         //A, B, STOP
         //a_START, STOP = 0;
-        if(u==0){
+        if (u == 0) {
             RandomInitProb(ptr_init_prob_t_, HMM_Parameters_.num_of_state_ - 2);
-        }else {
+        } else {
             RandomInitProb(ptr_init_prob_t_, HMM_Parameters_.num_of_state_ - 1);
         }
         for (int v = 1; v <= HMM_Parameters_.num_of_state_ - 1; v++) {
             //double prob = (double) 1 / (double) (HMM_Parameters_.num_of_state_ - 1);
-            if(v == HMM_Parameters_.num_of_state_-1 && u==0){
+            if (v == HMM_Parameters_.num_of_state_ - 1 && u == 0) {
                 (*HMM_Parameters_.ptr_t_)[u][v - 1] = 0;
-            }else{
+            } else {
+#ifndef TEST_MODE
                 (*HMM_Parameters_.ptr_t_)[u][v - 1] = ptr_init_prob_t_[v-1];
-//                (*HMM_Parameters_.ptr_t_)[u][v - 1] = t[u][v-1];
+#endif
+#ifdef TEST_MODE
+                (*HMM_Parameters_.ptr_t_)[u][v - 1] = t[u][v - 1];
+#endif
             }
             //(*HMM_Parameters_.ptr_t_next_)[u][v-1] = 0;
             //std::cout << "ptr_a_" <<u<<","<<v-1<<"="<<(*HMM_Parameters_.ptr_t_)[u][v - 1]<<std::endl;
@@ -77,11 +81,14 @@ void EM::Init() {
         //init emission prob
         RandomInitProb(ptr_init_prob_e_, HMM_Parameters_.num_of_x_);
         for (int k = 0; k < number_of_x_; k++) {
-            double prob = (double) 1 / (double) number_of_x_;
+#ifndef TEST_MODE
             (*HMM_Parameters_.ptr_e_)[v-1][k] = ptr_init_prob_e_[k];
-//            (*HMM_Parameters_.ptr_e_)[v-1][k] = e[v-1][k];
+#endif
+#ifdef TEST_MODE
+            (*HMM_Parameters_.ptr_e_)[v - 1][k] = e[v - 1][k];
+#endif
             //(*HMM_Parameters_.ptr_e_next_)[u][k] = 0;
-           // std::cout << "ptr_b_" <<v<<","<<k<<"="<<(*HMM_Parameters_.ptr_e_)[v-1][k]<<std::endl;
+            // std::cout << "ptr_b_" <<v<<","<<k<<"="<<(*HMM_Parameters_.ptr_e_)[v-1][k]<<std::endl;
         }
     }
     //to simplify the learning, we use the training x set as corpus.
@@ -226,7 +233,66 @@ bool EM::IsIteration() {
     return true;
 }
 
-void EM::EStep() {
+int EM::Viterbi(std::vector<std::string> seq) {
+    std::vector<double> pi_pre_vk;
+    std::vector<double> pi_vk;
+    int seq_size = seq.size();
+    //base case
+    for(int u=0; u<=HMM_Parameters_.num_of_state_-2; u++){
+        if(u==0){
+            pi_pre_vk.push_back(1);
+        } else{
+            pi_pre_vk.push_back(0);
+        }
+    }
+    //calc pi_vk
+    for(int k=1; k<=seq_size + 1; k++){
+        int index = ptr_x_corpus_map_->find(seq[k-1])->second;
+        int finalnode = 0;
+        if(k == seq_size+1){
+            double max_pi_v = 0;
+            for(int v=0; v<= HMM_Parameters_.num_of_state_-1; v++){
+                double tranprob = (*HMM_Parameters_.ptr_t_)[v][HMM_Parameters_.num_of_state_-2];
+                double pi_v = pi_pre_vk[v] * tranprob;
+                if(pi_v >= max_pi_v){
+                    max_pi_v = pi_v;
+                    finalnode = v;
+                }
+            }
+            return finalnode;
+        }else{
+            for(int v=0;v <= HMM_Parameters_.num_of_state_-1; v++){
+                double max_pi_u = 0;
+                for(int u=0; u<= HMM_Parameters_.num_of_state_-1; u++){
+                    double tranprob = (*HMM_Parameters_.ptr_t_)[u][v];
+                    double emprob = (*HMM_Parameters_.ptr_t_)[v][index];
+                    double pi_u_v = tranprob * emprob * pi_pre_vk[u];
+                    if(pi_u_v >= max_pi_u){
+                        max_pi_u = pi_u_v;
+                        (*ptr_path_node_)[v][k-1] = u;
+                    }
+                }
+                pi_vk.push_back(max_pi_u);
+            }
+            pi_pre_vk.clear();
+            pi_pre_vk = pi_vk;
+            pi_vk.clear();
+        }
+    }
+}
+
+void EM::BackTracking(std::vector<std::string> seq, int final_node) {
+
+}
+
+void EM::HardEStep() {
+    for (std::vector<std::vector<std::string>>::iterator it = ptr_training_seq_->begin();
+         it != ptr_training_seq_->end(); it++) {
+        Viterbi((*it));
+    }
+}
+
+void EM::SoftEStep() {
     HMM_Parameters_.ptr_count_u_->clear();
     int z_index = 0;
     double count[HMM_Parameters_.num_of_state_-1];
@@ -297,10 +363,14 @@ void EM::Normalize() {
     }
      */
 }
-void EM::Learning() {
+void EM::Learning(bool is_soft_em) {
     Init();
     while (IsIteration()) {
-        EStep();
+        if(is_soft_em){
+            SoftEStep();
+        } else{
+            HardEStep();
+        }
         MStep();
     }
 }

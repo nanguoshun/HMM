@@ -13,6 +13,6 @@ int main(int argc, char **argv) {
  //   Learning *ptr_unpserpvised = new Learning(argv[1],ptr_encoder->GetPtrDatamgr());
   //  ptr_unpserpvised->StartTraining();
     //EM *ptr_em = new EM(argv[1],ptr_encoder->GetPtrDatamgr());
-    EM *ptr_em = new EM(argv[1],ptr_encoder->GetPtrDatamgr());
-    ptr_em->Learning();
+    EM *ptr_em = new EM(ptr_encoder->GetPtrDatamgr());
+    ptr_em->Learning(true);
 }

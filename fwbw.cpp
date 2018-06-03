@@ -63,8 +63,7 @@ double FB::BackWard(std::map<std::string, int> *ptr_x_corpus_map, std::vector<st
         double tranprob = (*parameters.ptr_t_)[u_j.first][parameters.num_of_state_-2];
         double emprob = (*parameters.ptr_e_)[u_j.first-1][index];
 //        double value = (*parameters.ptr_t_)[u_j.first][parameters.num_of_state_-2] * (*parameters.ptr_e_)[u_j.first-1][index];
-        double value = tranprob * emprob;
-        return value;
+        return tranprob * emprob;
     }
     int xn_index = ptr_x_corpus_map->find(seq[size-1])->second;
     for (int u = 1; u <= parameters.num_of_state_-2; ++u) {
