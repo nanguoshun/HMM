@@ -28,23 +28,6 @@ EM::EM(const char* file_name, DatasetMgr *ptr_datamgr) {
     HMM_Parameters_.ptr_count_uv_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_-1, std::vector<double>(HMM_Parameters_.num_of_state_-1, 1));
     HMM_Parameters_.ptr_count_u_ =  new std::vector<double>;
     HMM_Parameters_.ptr_count_uk_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_-1, std::vector<double>(number_of_x_, 1));
-/*
-    pptr_alpha_ = new std::vector<std::vector<double>> *[num_of_training_setence_];
-    pptr_beta_ = new std::vector<std::vector<double>> *[num_of_training_setence_];
-    int seq_no = 0;
-    for (std::vector<std::vector<std::string>>::iterator it = ptr_training_seq_->begin();
-         it != ptr_training_seq_->end(); it++) {
-        int size = (*it).size();
-        //std::cout << "sequence is: ";
-        for (std::vector<std::string>::iterator itt = (*it).begin(); itt != (*it).end(); itt++) {
-            //std::cout << *itt << " ";
-        }
-        //std::cout << std::endl;
-        pptr_alpha_[seq_no] = new std::vector<std::vector<double>>(size, std::vector<double>(HMM_Parameters_.num_of_state_, 1));
-        pptr_beta_[seq_no] = new std::vector<std::vector<double>>(size, std::vector<double>(HMM_Parameters_.num_of_state_, 1));
-        seq_no++;
-    }
-*/
     ptr_fwbw = new ForwardBackward();
     ptr_x_corpus_map_ = new std::map<std::string, int>;
     ptr_x_corpus_ = new std::vector<std::string>;
@@ -96,7 +79,7 @@ void EM::Init() {
         //A, B, STOP
         for (int v = 1; v <= HMM_Parameters_.num_of_state_-1; v++) {
             double prob = (double) 1 / (double) (HMM_Parameters_.num_of_state_ - 1);
-            (*HMM_Parameters_.ptr_t_)[u][v-1] = prob;//ptr_init_prob_t_[u];
+            (*HMM_Parameters_.ptr_t_)[u][v-1] = ptr_init_prob_t_[u];
             //(*HMM_Parameters_.ptr_t_next_)[u][v-1] = 0;
             //std::cout << "ptr_a_" <<i<<","<<j<<"="<<(*ptr_a_)[i][j]<<std::endl;
         }
@@ -104,7 +87,7 @@ void EM::Init() {
         if(u>=1){
             for (int k = 0; k < number_of_x_; k++) {
                 double prob = (double) 1 / (double) number_of_x_;
-                (*HMM_Parameters_.ptr_e_)[u][k] = prob;//ptr_init_prob_e_[k];
+                (*HMM_Parameters_.ptr_e_)[u][k] = ptr_init_prob_e_[k];
                 //(*HMM_Parameters_.ptr_e_next_)[u][k] = 0;
                 // std::cout << "ptr_b_" <<i<<","<<k<<"="<<(*ptr_b_)[i][k]<<std::endl;
             }
@@ -345,7 +328,7 @@ void EM::EStep() {
                         std::cout << "ptr_Z is zero"<<std::endl;
                     }
                     if(denominator>0){
-                        count_START_v += numerator / denominator;
+                        count_START_v += (numerator / denominator);
                     }
                     Z_index ++;
                 }

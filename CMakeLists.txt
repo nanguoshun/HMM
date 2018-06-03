@@ -3,4 +3,4 @@ project(HMM)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(HMM main.cpp datasetmgr.h encoder.h encoder.cpp datasetmgr.cpp common.h decoder.h decoder.cpp unsupervised.h unsupervised.cpp forward-backword.h forward-backword.cpp em.h em.cpp)
+add_executable(HMM main.cpp datasetmgr.h encoder.h encoder.cpp datasetmgr.cpp common.h decoder.h decoder.cpp unsupervised.h unsupervised.cpp forward-backword.h forward-backword.cpp em.h em.cpp SoftEM.h SoftEM.cpp fwbw.h fwbw.cpp)
