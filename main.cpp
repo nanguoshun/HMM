@@ -4,7 +4,6 @@
 #include "datasetmgr.h"
 #include "encoder.h"
 #include "decoder.h"
-#include "unsupervised.h"
 #include "em.h"
 int main(int argc, char **argv) {
     Encoder *ptr_encoder = new Encoder(argv[1]);
