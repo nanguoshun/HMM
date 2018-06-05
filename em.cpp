@@ -25,7 +25,9 @@ EM::EM(DatasetMgr *ptr_datamgr) {
     HMM_Parameters_.ptr_count_u_ = new std::vector<double>;
     HMM_Parameters_.ptr_count_uk_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 2, std::vector<double>(number_of_x_, 1));
     //to record the previous node with maximized prob.
-    ptr_path_node_ = new std::vector<std::vector<double>>(HMM_Parameters_.num_of_state_ - 2, std::vector<double>(number_of_x_, 1));
+    ptr_path_matrix_ = new std::vector<std::vector<int>>(HMM_Parameters_.num_of_state_ - 2, std::vector<int>(number_of_x_, 1));
+    //the path
+    ptr_path_ = new std::vector<int>(number_of_x_);
     ptr_fwbw = new FB();
     ptr_x_corpus_map_ = new std::map<std::string, int>;
     ptr_x_corpus_ = new std::vector<std::string>;
@@ -118,6 +120,8 @@ EM::~EM() {
     delete ptr_Z_;
     delete ptr_init_prob_t_;
     delete ptr_init_prob_e_;
+    delete ptr_path_matrix_;
+    delete ptr_path_;
 }
 
 double EM::CalcPX(std::vector<std::string> seq) {
@@ -233,43 +237,50 @@ bool EM::IsIteration() {
     return true;
 }
 
-int EM::Viterbi(std::vector<std::string> seq) {
+std::pair<double,int> EM::Viterbi(std::vector<std::string> seq) {
     std::vector<double> pi_pre_vk;
     std::vector<double> pi_vk;
     int seq_size = seq.size();
-    //base case
-    for(int u=0; u<=HMM_Parameters_.num_of_state_-2; u++){
-        if(u==0){
-            pi_pre_vk.push_back(1);
-        } else{
-            pi_pre_vk.push_back(0);
-        }
-    }
+    int finalnode = 0;
     //calc pi_vk
-    for(int k=1; k<=seq_size + 1; k++){
-        int index = ptr_x_corpus_map_->find(seq[k-1])->second;
-        int finalnode = 0;
-        if(k == seq_size+1){
+    for(int k=0; k<=seq_size; k++){
+        //base case
+        if(k==0){
+            int index = ptr_x_corpus_map_->find(seq[k])->second;
+            for(int v=1; v<=HMM_Parameters_.num_of_state_-2; v++){
+                //pi(0, v), if v = start, then the vale is 1, otherwise 0;
+                double tranprob = (*HMM_Parameters_.ptr_t_)[0][v-1];
+                double emprob = (*HMM_Parameters_.ptr_e_)[v-1][index];
+                double pi_v = tranprob * emprob;
+                pi_pre_vk.push_back(pi_v);
+                (*ptr_path_matrix_)[v-1][0] = 0;
+            }
+            continue;
+        }
+        if(k == seq_size){
             double max_pi_v = 0;
-            for(int v=0; v<= HMM_Parameters_.num_of_state_-1; v++){
-                double tranprob = (*HMM_Parameters_.ptr_t_)[v][HMM_Parameters_.num_of_state_-2];
-                double pi_v = pi_pre_vk[v] * tranprob;
+            for(int u=1; u<= HMM_Parameters_.num_of_state_-2; u++){
+                double tranprob = (*HMM_Parameters_.ptr_t_)[u][HMM_Parameters_.num_of_state_-2];
+                double vk = pi_pre_vk[u-1];
+                double pi_v = vk * tranprob;
                 if(pi_v >= max_pi_v){
                     max_pi_v = pi_v;
-                    finalnode = v;
+                    finalnode = u;
                 }
             }
-            return finalnode;
+            return std::make_pair(max_pi_v, finalnode);
         }else{
-            for(int v=0;v <= HMM_Parameters_.num_of_state_-1; v++){
+            int index = ptr_x_corpus_map_->find(seq[k])->second;
+            for(int v=1;v <= HMM_Parameters_.num_of_state_-2; v++){
                 double max_pi_u = 0;
-                for(int u=0; u<= HMM_Parameters_.num_of_state_-1; u++){
-                    double tranprob = (*HMM_Parameters_.ptr_t_)[u][v];
-                    double emprob = (*HMM_Parameters_.ptr_t_)[v][index];
-                    double pi_u_v = tranprob * emprob * pi_pre_vk[u];
+                for(int u=1; u<= HMM_Parameters_.num_of_state_-2; u++){
+                    double tranprob = (*HMM_Parameters_.ptr_t_)[u][v-1];
+                    double emprob = (*HMM_Parameters_.ptr_e_)[v-1][index];
+                    double vk = pi_pre_vk[u-1];
+                    double pi_u_v = tranprob * emprob * vk;
                     if(pi_u_v >= max_pi_u){
                         max_pi_u = pi_u_v;
-                        (*ptr_path_node_)[v][k-1] = u;
+                        (*ptr_path_matrix_)[v-1][k] = u;
                     }
                 }
                 pi_vk.push_back(max_pi_u);
@@ -281,14 +292,26 @@ int EM::Viterbi(std::vector<std::string> seq) {
     }
 }
 
-void EM::BackTracking(std::vector<std::string> seq, int final_node) {
-
+void EM::BackTracking(std::pair<double,int> viterbi_result) {
+    double final_node = viterbi_result.second;
+    double pre_node = final_node;
+    //the final node is known
+    (*ptr_path_)[HMM_Parameters_.num_of_x_-1] = final_node;
+    //backtracking the rest of the node.
+    for(int k = HMM_Parameters_.num_of_x_-2; k>=0; k--){
+        (*ptr_path_)[k] = (*ptr_path_matrix_)[pre_node-1][k+1];
+        pre_node = (*ptr_path_)[k];
+    }
+    for(int k=0; k<HMM_Parameters_.num_of_x_; k++){
+        std::cout << (*ptr_path_)[k] <<std::endl;
+    }
 }
 
 void EM::HardEStep() {
     for (std::vector<std::vector<std::string>>::iterator it = ptr_training_seq_->begin();
          it != ptr_training_seq_->end(); it++) {
-        Viterbi((*it));
+        std::pair<double,int> viterbi_result = Viterbi((*it));
+        BackTracking(viterbi_result);
     }
 }
 
