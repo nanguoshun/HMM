@@ -26,7 +26,7 @@ const double INITIAL_LOG_LIKEIHOOD = 10000;
 const double ALPHA_START = 0.01;
 const int RAND_MAX_NUM = 100;
 
-#define TEST_MODE;
+#define TEST_MODE = 100;
 
 struct HMMParameters{
     size_t  num_of_state_;
