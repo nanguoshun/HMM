@@ -17,8 +17,8 @@ public:
     void SoftEStep();
     void HardEStep();
     void MStep();
-    int Viterbi(std::vector<std::string> seq);
-    void BackTracking(std::vector<std::string> seq, int finalnode);
+    std::pair<double, int> Viterbi(std::vector<std::string> seq);
+    void BackTracking(std::pair<double,int> vertibi_result);
     void Normalize();
     void CalcUV(std::vector<std::string> seq, double Z_i);
     void CalcUO(std::vector<std::string> seq,double Z_i);
@@ -36,7 +36,8 @@ private:
     std::set<std::string> *ptr_x_set_;
     std::vector<std::string> *ptr_train_x_vector_; //sequence is separated by a FLAG;
     std::vector<std::vector<std::string>> *ptr_training_seq_;
-    std::vector<std::vector<double >> *ptr_path_node_;
+    std::vector<std::vector<int>> *ptr_path_matrix_;
+    std::vector<int> *ptr_path_;
 
     FB *ptr_fwbw;
     size_t  number_of_x_;

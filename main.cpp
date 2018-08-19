@@ -14,5 +14,5 @@ int main(int argc, char **argv) {
   //  ptr_unpserpvised->StartTraining();
     //EM *ptr_em = new EM(argv[1],ptr_encoder->GetPtrDatamgr());
     EM *ptr_em = new EM(ptr_encoder->GetPtrDatamgr());
-    ptr_em->Learning(true);
+    ptr_em->Learning(false);
 }

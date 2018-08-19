@@ -103,4 +103,3 @@ double FB::BackWard(std::map<std::string, int> *ptr_x_corpus_map, std::vector<st
         }
     }
 }
-
