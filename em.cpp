@@ -10,6 +10,7 @@ EM::EM(DatasetMgr *ptr_datamgr) {
     ptr_train_x_vector_ = ptr_datamgr->GetTrainingXVector();
     HMM_Parameters_.num_of_state_ = ptr_datamgr_->GetTagSet()->size() + 2;
     HMM_Parameters_.num_of_x_ = number_of_x_;
+    
 #ifdef TEST_MODE
     HMM_Parameters_.num_of_state_ = 4;//ptr_datamgr_->GetTagSet()->size() + 2;
     HMM_Parameters_.num_of_x_ = 3;//number_of_x_;
